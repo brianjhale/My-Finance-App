@@ -504,3 +504,88 @@ li:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transform: translateY(-1p
     gap: 10px;
     margin-top: 10px;
 }
+
+/* =========================================================================
+   MOBILE RESPONSIVENESS (Screens under 768px)
+   ========================================================================= */
+@media (max-width: 768px) {
+    /* Stack the sidebar and content on top of each other */
+    .app-wrapper {
+        flex-direction: column;
+        height: auto;
+        overflow-y: auto;
+    }
+
+    /* Make the sidebar full-width */
+    .sidebar {
+        width: 100%;
+        height: auto;
+        padding: 10px;
+    }
+
+    /* Change navigation to a horizontal scrollable row OR keep it simple */
+    .nav-links {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 0;
+        gap: 10px;
+    }
+
+    /* Ensure inputs are easy to tap */
+    input, select, button {
+        min-height: 44px; /* Apple/Android recommendation for touch targets */
+        font-size: 16px;  /* Prevents iOS zoom on input focus */
+    }
+}
+
+/* =========================================================================
+   MOBILE-FIRST LAYOUT (Default for all devices)
+   ========================================================================= */
+.app-wrapper {
+    display: flex;
+    flex-direction: column; /* Stacked layout by default for mobile */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 100%; /* Full width for mobile */
+    height: auto;
+    padding: 10px;
+    border-right: none;
+    border-bottom: 1px solid #1e293b;
+    flex-shrink: 0;
+}
+
+.nav-links {
+    display: flex;
+    flex-direction: row; /* Horizontal scrollable list */
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 5px;
+    gap: 5px;
+}
+
+/* =========================================================================
+   DESKTOP OVERRIDE (Only applies on larger screens)
+   ========================================================================= */
+@media (min-width: 768px) {
+    .app-wrapper {
+        flex-direction: row; /* Switch to side-by-side */
+    }
+
+    .sidebar {
+        width: 260px; /* Specific width for desktop */
+        height: 100vh;
+        border-right: 1px solid #e2e8f0;
+        border-bottom: none;
+    }
+
+    .nav-links {
+        flex-direction: column; /* Vertical links */
+        overflow-x: visible;
+        white-space: normal;
+    }
+}
