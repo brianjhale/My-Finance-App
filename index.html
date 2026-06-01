@@ -142,7 +142,7 @@
             <option value="Unassigned">📦 Unassigned</option>
           </select>
           <input type="number" id="budget-limit-input" placeholder="Monthly Limit ($)" step="0.01" />
-          <button id="add-budget-btn">Set Budget</button>
+          <button id="add-budget-btn" class="wallet-btn btn-primary">Set Budget</button>
         </div>
 
         <div id="budgets-grid" class="budgets-grid-layout">
@@ -163,5 +163,18 @@
   </div>
 
   <script src="script.js"></script>
+
+  <!-- Edit Transaction Modal -->
+<div id="edit-modal" class="modal">
+    <div class="modal-content">
+        <h3>Edit Transaction</h3>
+        <input type="text" id="edit-desc" placeholder="Description">
+        <input type="number" id="edit-amount" placeholder="Amount">
+        <div class="modal-actions">
+            <button class="wallet-btn" onclick="closeEditModal()">Cancel</button>
+            <button class="wallet-btn btn-primary" onclick="saveEditedTransaction()">Save</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
