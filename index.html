@@ -129,9 +129,24 @@
           <h1>🛡️ Spending Budgets</h1>
           <p>Set spending guardrails grouped by custom transaction categories.</p>
         </div>
-        <div class="placeholder-card">
-          <p>Budget envelope bars and dynamic allocation progress elements go here.</p>
+        
+        <div class="form-group">
+          <select id="budget-category-select">
+            <option value="Housing">🏠 Housing / Rent</option>
+            <option value="Groceries">🍏 Groceries</option>
+            <option value="Utilities">⚡ Utilities</option>
+            <option value="Transport">🚗 Transport / Fuel</option>
+            <option value="Dining">🍔 Dining & Fast Food</option>
+            <option value="Entertainment">🎬 Entertainment</option>
+            <option value="Savings">📈 Savings Allocation</option>
+            <option value="Unassigned">📦 Unassigned</option>
+          </select>
+          <input type="number" id="budget-limit-input" placeholder="Monthly Limit ($)" step="0.01" />
+          <button id="add-budget-btn">Set Budget</button>
         </div>
+
+        <div id="budgets-grid" class="budgets-grid-layout">
+          </div>
       </section>
 
       <section id="income-expenses-page" class="page-view hidden">

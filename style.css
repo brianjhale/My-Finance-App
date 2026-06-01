@@ -9,6 +9,8 @@
     --border-color: #e2e8f0;
 }
 
+* { box-sizing: border-box; }
+
 body {
     margin: 0;
     padding: 0;
@@ -177,18 +179,56 @@ body {
     max-width: 750px;
 }
 
-.form-group { display: flex; gap: 10px; margin-bottom: 20px; }
-.form-group input, .form-group select { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 15px; background-color: #ffffff; color: var(--text-main); }
+.form-group, .account-form-group { 
+    display: flex; gap: 10px; margin-bottom: 20px; align-items: center; 
+}
+.form-group input, .form-group select, .account-form-group input { 
+    padding: 0 14px; 
+    height: 40px; 
+    border: 1px solid var(--border-color); 
+    border-radius: 6px; 
+    font-size: 15px; 
+    background-color: #ffffff; 
+    color: var(--text-main); 
+    transition: all 0.2s ease;
+}
+.form-group input:focus, .form-group select:focus, .account-form-group input:focus {
+    outline: none;
+    border-color: var(--accent-green);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
 .form-group input[type="text"] { flex: 2; }
 #amount-input { flex: 1; }
 #transaction-account-select { flex: 1.5; cursor: pointer; }
 #transaction-type-select { flex: 1; cursor: pointer; }
 
-#add-btn { background-color: var(--accent-green); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-#add-btn:hover { background-color: #059669; }
+#add-btn, #add-account-btn { 
+    background-color: var(--accent-green); 
+    color: white; 
+    border: none; 
+    padding: 0 16px; 
+    height: 40px;
+    border-radius: 6px; 
+    font-weight: bold; 
+    cursor: pointer; 
+    transition: all 0.2s ease;
+}
+#add-btn:hover, #add-account-btn:hover { background-color: #059669; }
 
 ul { list-style-type: none; padding: 0; margin: 0; }
-li { background: var(--bg-primary); padding: 12px 16px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #334155; }
+li { 
+    background: var(--bg-primary); 
+    padding: 12px 16px; 
+    margin-bottom: 8px; 
+    border-radius: 6px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border-left: 5px solid #334155; 
+    transition: all 0.1s ease;
+}
+li:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transform: translateY(-1px); }
 
 .ledger-amount { font-size: 16px; font-weight: 700; }
 .ledger-amount.expense-style { color: #df4759; }
@@ -242,20 +282,7 @@ li { background: var(--bg-primary); padding: 12px 16px; margin-bottom: 8px; bord
     margin-bottom: 30px;
 }
 .account-creation-container h3 { margin: 0 0 15px 0; font-size: 16px; color: var(--text-main); }
-.account-form-group { display: flex; gap: 10px; }
-.account-form-group input { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 15px; flex: 2; }
 #account-balance-input { flex: 1; }
-
-#add-account-btn {
-    background-color: var(--sidebar-bg);
-    color: white;
-    border: none;
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-}
-#add-account-btn:hover { background-color: #1e293b; }
 
 .accounts-grid-layout {
     display: grid;
@@ -270,7 +297,9 @@ li { background: var(--bg-primary); padding: 12px 16px; margin-bottom: 8px; bord
     padding: 20px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     border-top: 4px solid var(--accent-green);
+    transition: all 0.1s ease;
 }
+.account-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
 .account-card-title { font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px 0; }
 .account-card-balance { font-size: 24px; font-weight: 700; color: var(--text-main); margin: 0; }
 
@@ -279,8 +308,6 @@ li { background: var(--bg-primary); padding: 12px 16px; margin-bottom: 8px; bord
 /* =========================================================================
    DYNAMIC CRUD MANAGEMENT STYLES
    ========================================================================= */
-
-/* Inline delete button for transaction ledger rows */
 .delete-btn {
     background: none;
     border: none;
@@ -292,13 +319,8 @@ li { background: var(--bg-primary); padding: 12px 16px; margin-bottom: 8px; bord
     transition: all 0.15s ease;
     margin-left: 12px;
 }
+.delete-btn:hover { background-color: #fee2e2; color: #ef4444; }
 
-.delete-btn:hover {
-    background-color: #fee2e2;
-    color: #ef4444; /* Destructive Red */
-}
-
-/* Delete control bar for Account Cards */
 .account-card-footer {
     margin-top: 15px;
     padding-top: 10px;
@@ -306,7 +328,6 @@ li { background: var(--bg-primary); padding: 12px 16px; margin-bottom: 8px; bord
     display: flex;
     justify-content: flex-end;
 }
-
 .card-action-btn {
     background: none;
     border: none;
@@ -318,8 +339,48 @@ li { background: var(--bg-primary); padding: 12px 16px; margin-bottom: 8px; bord
     border-radius: 4px;
     transition: all 0.15s ease;
 }
+.card-action-btn.danger:hover { background-color: #fee2e2; color: #ef4444; }
 
-.card-action-btn.danger:hover {
-    background-color: #fee2e2;
+/* =========================================================================
+   BUDGET PAGE STYLES (NEW)
+   ========================================================================= */
+.budgets-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+    max-width: 900px;
+    margin-top: 20px;
+}
+
+.budget-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.1s ease;
+}
+.budget-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+
+.budget-card h4 { margin: 0 0 10px 0; color: var(--text-main); }
+.budget-card p { margin: 0 0 15px 0; font-size: 16px; font-weight: 600; color: var(--accent-green); }
+
+.budget-card button {
+    background: #f1f5f9;
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #475569;
+    align-self: flex-start;
+    transition: all 0.15s ease;
+}
+.budget-card button:hover {
+    background: #fee2e2;
     color: #ef4444;
+    border-color: #fecaca;
 }

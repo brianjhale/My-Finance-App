@@ -22,6 +22,12 @@ const accountsGrid = document.getElementById('accounts-grid');
 // Audit Elements
 const auditFeedList = document.getElementById('audit-feed-list');
 
+// Budget Elements
+const budgetCategorySelect = document.getElementById('budget-category-select');
+const budgetLimitInput = document.getElementById('budget-limit-input');
+const addBudgetBtn = document.getElementById('add-budget-btn');
+const budgetsGrid = document.getElementById('budgets-grid');
+
 // Utilities (JSON Backup Engine)
 const exportBtn = document.getElementById('export-btn');
 const importBtn = document.getElementById('import-btn');
@@ -32,9 +38,10 @@ const importFile = document.getElementById('import-file');
 // =========================================================================
 let transactions = JSON.parse(localStorage.getItem('clarity_wallet_transactions')) || [];
 let accounts = JSON.parse(localStorage.getItem('clarity_wallet_accounts')) || [];
+let budgets = JSON.parse(localStorage.getItem('clarity_wallet_budgets')) || [];
 
 // =========================================================================
-// 3. SPA ROUTER SYSTEM (With Dynamic Dropdown Hook)
+// 3. SPA ROUTER SYSTEM
 // =========================================================================
 function handleNavigation(event) {
     const clickedBtn = event.currentTarget;
@@ -46,22 +53,15 @@ function handleNavigation(event) {
     pageViews.forEach(view => view.classList.add('hidden'));
     
     const targetPage = document.getElementById(targetPageId);
-    if (targetPage) {
-        targetPage.classList.remove('hidden');
-    }
+    if (targetPage) targetPage.classList.remove('hidden');
 
-    // Force refresh the selection dropdown anytime the user switches to the transaction tab
-    if (targetPageId === 'transactions-page') {
-        populateAccountDropdown();
-    }
+    if (targetPageId === 'transactions-page') populateAccountDropdown();
 }
 
-navButtons.forEach(btn => {
-    btn.addEventListener('click', handleNavigation);
-});
+navButtons.forEach(btn => btn.addEventListener('click', handleNavigation));
 
 // =========================================================================
-// 4. TRANSACTION LEDGER PROCESSING (With CRUD Splicing)
+// 4. TRANSACTION LEDGER PROCESSING
 // =========================================================================
 function populateAccountDropdown() {
     if (!transactionAccountSelect) return;
@@ -104,17 +104,15 @@ function addTransaction() {
         id: Date.now(),
         description: description,
         amount: amount,
-        accountId: Number(selectedAccountId), // Enforce safe integer key alignment
-        category: selectedCategory,          // Relational linking for budgets
+        accountId: Number(selectedAccountId),
+        category: selectedCategory,
         type: transactionType,
         verified: false 
     };
 
     transactions.push(transaction);
     localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
-    
     syncAllApplicationViews();
-
     descInput.value = '';
     amountInput.value = '';
 }
@@ -122,19 +120,16 @@ function addTransaction() {
 function deleteTransaction(transactionId) {
     transactions = transactions.filter(item => item.id !== transactionId);
     localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
-    
     syncAllApplicationViews();
 }
 
 function renderTransactions() {
     if (!transactionList) return;
-    
     transactionList.innerHTML = '';
     transactions.forEach(item => {
         const linkedAccount = accounts.find(acc => acc.id === item.accountId);
         const accountLabel = linkedAccount ? linkedAccount.name : 'Unknown Vault';
         const categoryLabel = item.category || 'Unassigned';
-
         const isExpense = item.type === 'expense';
         const displaySign = isExpense ? '-' : '+';
         const styleClass = isExpense ? 'expense-style' : 'income-style';
@@ -151,20 +146,15 @@ function renderTransactions() {
                 <button class="delete-btn" title="Delete Entry">🗑️</button>
             </div>
         `;
-
-        const trashBtn = li.querySelector('.delete-btn');
-        trashBtn.addEventListener('click', () => deleteTransaction(item.id));
-
+        li.querySelector('.delete-btn').addEventListener('click', () => deleteTransaction(item.id));
         transactionList.appendChild(li);
     });
 }
 
-if (addBtn) {
-    addBtn.addEventListener('click', addTransaction);
-}
+if (addBtn) addBtn.addEventListener('click', addTransaction);
 
 // =========================================================================
-// 5. BANK & CASH ACCOUNTS PROCESSING (Self-Contained Dynamic Ledger Engine)
+// 5. BANK & CASH ACCOUNTS PROCESSING
 // =========================================================================
 function addAccount() {
     const accountName = accountNameInput.value.trim();
@@ -176,267 +166,209 @@ function addAccount() {
     }
 
     const accountId = Date.now();
-
-    const newAccount = {
-        id: accountId,
-        name: accountName,
-        balance: 0.00 
-    };
+    const newAccount = { id: accountId, name: accountName, balance: 0.00 };
 
     accounts.push(newAccount);
     localStorage.setItem('clarity_wallet_accounts', JSON.stringify(accounts));
     
     if (startingBalance > 0) {
-        const initialDepositTx = {
+        transactions.push({
             id: Date.now() + 1, 
             description: `Initial Vault Deposit - ${accountName}`,
             amount: startingBalance,
             accountId: accountId,
             category: 'Unassigned',
             type: 'income',
-            verified: false // Demands human verification to adjust balance baseline
-        };
-        transactions.push(initialDepositTx);
+            verified: false 
+        });
         localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
     }
 
     syncAllApplicationViews();
     populateAccountDropdown(); 
-
     accountNameInput.value = '';
     accountBalanceInput.value = '';
 }
 
 function deleteAccount(accountId) {
-    if (!confirm('Are you sure you want to delete this account? This will also purge any logged transactions tied directly to it to avoid corrupt ledger memory.')) {
-        return;
-    }
-
+    if (!confirm('Are you sure? This will also purge transactions tied to this account.')) return;
     accounts = accounts.filter(acc => acc.id !== accountId);
     localStorage.setItem('clarity_wallet_accounts', JSON.stringify(accounts));
-
     transactions = transactions.filter(item => item.accountId !== accountId);
     localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
-
     syncAllApplicationViews();
     populateAccountDropdown(); 
 }
 
 function renderAccounts() {
     if (!accountsGrid) return;
-    
     accountsGrid.innerHTML = '';
     accounts.forEach(acc => {
         const verifiedTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === true);
         let currentCalculatedBalance = parseFloat(acc.balance);
-
         verifiedTransactions.forEach(item => {
-            if (item.type === 'expense') {
-                currentCalculatedBalance -= item.amount;
-            } else if (item.type === 'income') {
-                currentCalculatedBalance += item.amount;
-            }
+            if (item.type === 'expense') currentCalculatedBalance -= item.amount;
+            else if (item.type === 'income') currentCalculatedBalance += item.amount;
         });
 
         const isNegative = currentCalculatedBalance < 0;
-        const balanceColorStyle = isNegative ? 'style="color: #df4759;"' : '';
-
         const card = document.createElement('div');
         card.className = 'account-card';
-        if (isNegative) card.style.borderTop = "4px solid #df4759"; // Inject negative alert badge formatting
+        if (isNegative) card.style.borderTop = "4px solid #df4759";
 
         card.innerHTML = `
             <h4 class="account-card-title">🏦 ${acc.name}</h4>
-            <p class="account-card-balance" ${balanceColorStyle}>$${currentCalculatedBalance.toFixed(2)}</p>
+            <p class="account-card-balance" ${isNegative ? 'style="color:#df4759"' : ''}>$${currentCalculatedBalance.toFixed(2)}</p>
             <div class="account-card-footer">
                 <button class="card-action-btn danger">Close Vault</button>
             </div>
         `;
-
-        const closeVaultBtn = card.querySelector('.card-action-btn.danger');
-        closeVaultBtn.addEventListener('click', () => deleteAccount(acc.id));
-
+        card.querySelector('.card-action-btn.danger').addEventListener('click', () => deleteAccount(acc.id));
         accountsGrid.appendChild(card);
     });
 }
 
-if (addAccountBtn) {
-    addAccountBtn.addEventListener('click', addAccount);
-}
+if (addAccountBtn) addAccountBtn.addEventListener('click', addAccount);
 
 // =========================================================================
-// 6. AUDIT VERIFICATION HOOKS & RENDERING
+// 6. AUDIT VERIFICATION HOOKS
 // =========================================================================
 function toggleVerification(transactionId) {
     const match = transactions.find(item => item.id === transactionId);
     if (match) {
         match.verified = !match.verified;
         localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
-        
         syncAllApplicationViews();
     }
 }
 
 function renderAuditFeed() {
     if (!auditFeedList) return;
-    
     auditFeedList.innerHTML = '';
-    
     if (transactions.length === 0) {
         auditFeedList.innerHTML = '<p style="color:#64748b; text-align:center; padding: 20px;">No transactions logged yet.</p>';
         return;
     }
-    
     transactions.forEach(item => {
         const linkedAccount = accounts.find(acc => acc.id === item.accountId);
-        const accountName = linkedAccount ? linkedAccount.name : 'Unknown Vault';
-        const categoryLabel = item.category || 'Unassigned';
-        
-        const isExpense = item.type === 'expense';
-        const displaySign = isExpense ? '-' : '+';
-        const amountColor = isExpense ? '#df4759' : '#10b981';
-
         const row = document.createElement('div');
         row.className = 'audit-item-row';
-        
         row.innerHTML = `
             <div class="audit-item-details">
-                <strong style="color:var(--text-main); font-size:15px;">${item.description}</strong>
-                <span class="audit-item-meta">Account: <strong>${accountName}</strong> | Cat: <strong>${categoryLabel}</strong> | Value: <span style="color:${amountColor}; font-weight:600;">${displaySign}$${item.amount.toFixed(2)}</span></span>
+                <strong>${item.description}</strong>
+                <span class="audit-item-meta">Account: <strong>${linkedAccount?.name || 'Unknown'}</strong> | Cat: <strong>${item.category || 'Unassigned'}</strong></span>
             </div>
             <button class="audit-status-badge ${item.verified ? 'status-verified' : 'status-unverified'}">
                 ${item.verified ? '✅ Verified' : '⚠️ Unverified'}
             </button>
         `;
-        
-        const badgeButton = row.querySelector('.audit-status-badge');
-        badgeButton.addEventListener('click', () => {
-            toggleVerification(item.id);
-        });
-        
+        row.querySelector('.audit-status-badge').addEventListener('click', () => toggleVerification(item.id));
         auditFeedList.appendChild(row);
     });
 }
 
 // =========================================================================
-// 7. DYNAMIC UNIFIED NET WORTH METRIC ENGINE
+// 7. BUDGET ENGINE (New Implementation)
+// =========================================================================
+function addBudget() {
+    const category = budgetCategorySelect.value;
+    const limit = parseFloat(budgetLimitInput.value);
+    if (isNaN(limit) || limit <= 0) { alert('Enter valid budget limit.'); return; }
+    
+    budgets = budgets.filter(b => b.category !== category);
+    budgets.push({ category, limit });
+    localStorage.setItem('clarity_wallet_budgets', JSON.stringify(budgets));
+    syncAllApplicationViews();
+    budgetLimitInput.value = '';
+}
+
+function renderBudgets() {
+    if (!budgetsGrid) return;
+    budgetsGrid.innerHTML = '';
+    budgets.forEach(b => {
+        const div = document.createElement('div');
+        div.className = 'budget-card';
+        div.innerHTML = `
+            <h4>🏷️ ${b.category}</h4>
+            <p>Limit: $${b.limit.toFixed(2)}</p>
+            <button onclick="removeBudget('${b.category}')">Remove</button>
+        `;
+        budgetsGrid.appendChild(div);
+    });
+}
+
+function removeBudget(category) {
+    budgets = budgets.filter(b => b.category !== category);
+    localStorage.setItem('clarity_wallet_budgets', JSON.stringify(budgets));
+    syncAllApplicationViews();
+}
+
+if (addBudgetBtn) addBudgetBtn.addEventListener('click', addBudget);
+
+// =========================================================================
+// 8. DYNAMIC DASHBOARD METRICS
 // =========================================================================
 function updateDashboardMetrics() {
     const netWorthDisplay = document.getElementById('total-net-worth');
     const pendingImpactDisplay = document.getElementById('pending-impact-text');
-    
-    if (!netWorthDisplay || !pendingImpactDisplay) return;
+    if (!netWorthDisplay) return;
 
-    let totalClearedNetWorth = 0;
-    let totalPendingImpact = 0;
+    let totalCleared = 0;
+    let totalPending = 0;
 
     accounts.forEach(acc => {
-        const verifiedTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === true);
-        const pendingTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === false);
-
-        let accountClearedBalance = parseFloat(acc.balance); 
-        verifiedTransactions.forEach(item => {
-            if (item.type === 'expense') accountClearedBalance -= item.amount;
-            else if (item.type === 'income') accountClearedBalance += item.amount;
+        transactions.filter(t => t.accountId === acc.id).forEach(item => {
+            const amount = item.type === 'expense' ? -item.amount : item.amount;
+            if (item.verified) totalCleared += amount;
+            else totalPending += amount;
         });
-
-        let accountPendingImpact = 0;
-        pendingTransactions.forEach(item => {
-            if (item.type === 'expense') accountPendingImpact -= item.amount;
-            else if (item.type === 'income') accountPendingImpact += item.amount;
-        });
-
-        totalClearedNetWorth += accountClearedBalance;
-        totalPendingImpact += accountPendingImpact;
     });
 
-    // Update UI
-    netWorthDisplay.textContent = `$${totalClearedNetWorth.toFixed(2)}`;
-    
-    if (totalClearedNetWorth < 0) {
-        netWorthDisplay.style.color = "#df4759";
-    } else {
-        netWorthDisplay.style.color = "var(--text-main)";
-    }
-    
-    if (totalPendingImpact !== 0) {
-        const sign = totalPendingImpact > 0 ? '+' : '';
-        pendingImpactDisplay.textContent = `(${sign}${totalPendingImpact.toFixed(2)} pending across unverified entries)`;
-    } else {
-        pendingImpactDisplay.textContent = "All transactions verified.";
+    netWorthDisplay.textContent = `$${totalCleared.toFixed(2)}`;
+    if (pendingImpactDisplay) {
+        pendingImpactDisplay.textContent = totalPending !== 0 ? `Pending Impact: $${totalPending.toFixed(2)}` : '';
     }
 }
 
 // =========================================================================
-// 8. LOCAL DATA MANAGEMENT WORKFLOWS (Import/Export Backup Engine)
+// 9. IMPORT/EXPORT BACKUP ENGINE
 // =========================================================================
 if (exportBtn) {
     exportBtn.addEventListener('click', () => {
-        if (accounts.length === 0 && transactions.length === 0) {
-            alert("There is no ledger data available to back up yet.");
-            return;
-        }
-        const backupPackage = {
-            accounts: accounts,
-            transactions: transactions,
-            exportedAt: new Date().toISOString()
-        };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupPackage));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `clarity_wallet_backup_${Date.now()}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ accounts, transactions, budgets }));
+        const a = document.createElement('a');
+        a.href = dataStr; a.download = 'clarity_wallet_backup.json'; a.click();
     });
 }
 
 if (importBtn && importFile) {
     importBtn.addEventListener('click', () => importFile.click());
-    
-    importFile.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
-
+    importFile.addEventListener('change', (e) => {
         const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const parsedData = JSON.parse(e.target.result);
-                
-                if (Array.isArray(parsedData.accounts) && Array.isArray(parsedData.transactions)) {
-                    if (confirm("Are you sure you want to import this ledger backup? This will completely replace your current local dashboard data.")) {
-                        accounts = parsedData.accounts;
-                        transactions = parsedData.transactions;
-                        
-                        localStorage.setItem('clarity_wallet_accounts', JSON.stringify(accounts));
-                        localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
-                        
-                        populateAccountDropdown();
-                        syncAllApplicationViews();
-                        alert("Ledger restored successfully!");
-                    }
-                } else {
-                    alert("Import failed: File format does not match Clarity Wallet architecture specifications.");
-                }
-            } catch (err) {
-                alert("Error compiling data file. Please ensure it is a valid JSON backup file.");
-            }
+        reader.onload = (ev) => {
+            const data = JSON.parse(ev.target.result);
+            accounts = data.accounts || [];
+            transactions = data.transactions || [];
+            budgets = data.budgets || [];
+            localStorage.setItem('clarity_wallet_accounts', JSON.stringify(accounts));
+            localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
+            localStorage.setItem('clarity_wallet_budgets', JSON.stringify(budgets));
+            syncAllApplicationViews();
         };
-        reader.readAsText(file);
-        event.target.value = '';
+        reader.readAsText(e.target.files[0]);
     });
 }
 
 // =========================================================================
-// 9. UNIFIED EVENT PIPELINE SYNC ENGINE
+// 10. UNIFIED SYNC ENGINE (RUN ON BOOT)
 // =========================================================================
 function syncAllApplicationViews() {
     renderTransactions();
     renderAccounts();
     renderAuditFeed();
+    renderBudgets();
     updateDashboardMetrics();
 }
 
-// INITIALIZATION RUN ON BOOT
 populateAccountDropdown();
 syncAllApplicationViews();
