@@ -43,6 +43,10 @@ function handleNavigation(event) {
     if (targetPage) {
         targetPage.classList.remove('hidden');
     }
+
+    if (targetPageId === 'transactions-page') {
+        populateAccountDropdown();
+    }
 }
 
 navButtons.forEach(btn => {
@@ -50,7 +54,7 @@ navButtons.forEach(btn => {
 });
 
 // =========================================================================
-// 4. TRANSACTION LEDGER PROCESSING (With CRUD Splicing)
+// 4. TRANSACTION LEDGER PROCESSING
 // =========================================================================
 function populateAccountDropdown() {
     if (!transactionAccountSelect) return;
@@ -106,9 +110,7 @@ function addTransaction() {
     amountInput.value = '';
 }
 
-// NEW: Delete individual entry handler
 function deleteTransaction(transactionId) {
-    // Filter memory array to exclude the target item ID
     transactions = transactions.filter(item => item.id !== transactionId);
     localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
     
@@ -140,7 +142,6 @@ function renderTransactions() {
             </div>
         `;
 
-        // Safely bind explicit event hook to the trash icon button
         const trashBtn = li.querySelector('.delete-btn');
         trashBtn.addEventListener('click', () => deleteTransaction(item.id));
 
@@ -153,7 +154,7 @@ if (addBtn) {
 }
 
 // =========================================================================
-// 5. BANK & CASH ACCOUNTS PROCESSING (With Relational Splicing)
+// 5. BANK & CASH ACCOUNTS PROCESSING (Self-Contained Dynamic Ledger Engine)
 // =========================================================================
 function addAccount() {
     const accountName = accountNameInput.value.trim();
@@ -164,37 +165,52 @@ function addAccount() {
         return;
     }
 
+    const accountId = Date.now();
+
+    // 1. Core Profile Instance created at absolute zero baseline ($0.00)
     const newAccount = {
-        id: Date.now(),
+        id: accountId,
         name: accountName,
-        balance: startingBalance
+        balance: 0.00 
     };
 
     accounts.push(newAccount);
     localStorage.setItem('clarity_wallet_accounts', JSON.stringify(accounts));
     
+    // 2. AUDIT-READY: Automatically append an Unverified Initial Deposit transaction row
+    if (startingBalance > 0) {
+        const initialDepositTx = {
+            id: Date.now() + 1, // Prevent key collision
+            description: `Initial Vault Deposit - ${accountName}`,
+            amount: startingBalance,
+            accountId: accountId,
+            type: 'income',
+            verified: false // Must be confirmed via human auditing to move account balances off $0.00
+        };
+        transactions.push(initialDepositTx);
+        localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
+    }
+
     syncAllApplicationViews();
+    populateAccountDropdown();
 
     accountNameInput.value = '';
     accountBalanceInput.value = '';
 }
 
-// NEW: Delete complete asset vault account cascade handler
 function deleteAccount(accountId) {
     if (!confirm('Are you sure you want to delete this account? This will also purge any logged transactions tied directly to it to avoid corrupt ledger memory.')) {
         return;
     }
 
-    // 1. Remove account target profile from state memory
     accounts = accounts.filter(acc => acc.id !== accountId);
     localStorage.setItem('clarity_wallet_accounts', JSON.stringify(accounts));
 
-    // 2. Cascade purge: Wipe any transactions tied back to this unique ID
     transactions = transactions.filter(item => item.accountId !== accountId);
     localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
 
     syncAllApplicationViews();
-    populateAccountDropdown(); // Force update form dropdown options
+    populateAccountDropdown();
 }
 
 function renderAccounts() {
@@ -202,28 +218,33 @@ function renderAccounts() {
     
     accountsGrid.innerHTML = '';
     accounts.forEach(acc => {
+        // Dynamic balance presentation layers
         const verifiedTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === true);
-        let currentCalculatedBalance = parseFloat(acc.balance);
+        const pendingTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === false);
 
+        let clearedBalance = parseFloat(acc.balance); // Always starts at 0.00
         verifiedTransactions.forEach(item => {
-            if (item.type === 'expense') {
-                currentCalculatedBalance -= item.amount;
-            } else if (item.type === 'income') {
-                currentCalculatedBalance += item.amount;
-            }
+            if (item.type === 'expense') clearedBalance -= item.amount;
+            else if (item.type === 'income') clearedBalance += item.amount;
+        });
+
+        let workingBalance = clearedBalance;
+        pendingTransactions.forEach(item => {
+            if (item.type === 'expense') workingBalance -= item.amount;
+            else if (item.type === 'income') workingBalance += item.amount;
         });
 
         const card = document.createElement('div');
         card.className = 'account-card';
         card.innerHTML = `
             <h4 class="account-card-title">🏦 ${acc.name}</h4>
-            <p class="account-card-balance">$${currentCalculatedBalance.toFixed(2)}</p>
+            <p class="account-card-balance" style="font-size:22px;" title="Cleared Balance">$${clearedBalance.toFixed(2)}</p>
+            <small style="color: #64748b; display: block; margin-top: 2px;">Working: <strong>$${workingBalance.toFixed(2)}</strong></small>
             <div class="account-card-footer">
                 <button class="card-action-btn danger">Close Vault</button>
             </div>
         `;
 
-        // Bind delete functionality directly to the Close Vault option
         const closeVaultBtn = card.querySelector('.card-action-btn.danger');
         closeVaultBtn.addEventListener('click', () => deleteAccount(acc.id));
 
@@ -289,30 +310,48 @@ function renderAuditFeed() {
 }
 
 // =========================================================================
-// 7. DYNAMIC NET WORTH CALCULATION
+// 7. DYNAMIC DUAL NET WORTH METRIC ENGINE
 // =========================================================================
 function updateDashboardMetrics() {
     const netWorthDisplay = document.getElementById('total-net-worth');
-    if (!netWorthDisplay) return;
+    const pendingImpactDisplay = document.getElementById('pending-impact-text');
+    
+    if (!netWorthDisplay || !pendingImpactDisplay) return;
 
-    let overallNetWorth = 0;
+    let totalCleared = 0;
+    let totalPendingImpact = 0;
 
     accounts.forEach(acc => {
         const verifiedTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === true);
-        let currentCalculatedBalance = parseFloat(acc.balance);
+        const pendingTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === false);
 
+        // Calculate Cleared Balance
+        let accCleared = parseFloat(acc.balance);
         verifiedTransactions.forEach(item => {
-            if (item.type === 'expense') {
-                currentCalculatedBalance -= item.amount;
-            } else if (item.type === 'income') {
-                currentCalculatedBalance += item.amount;
-            }
+            if (item.type === 'expense') accCleared -= item.amount;
+            else if (item.type === 'income') accCleared += item.amount;
         });
 
-        overallNetWorth += currentCalculatedBalance;
+        // Calculate Pending Impact
+        let accPending = 0;
+        pendingTransactions.forEach(item => {
+            if (item.type === 'expense') accPending -= item.amount;
+            else if (item.type === 'income') accPending += item.amount;
+        });
+
+        totalCleared += accCleared;
+        totalPendingImpact += accPending;
     });
 
-    netWorthDisplay.textContent = `$${overallNetWorth.toFixed(2)}`;
+    // Update UI
+    netWorthDisplay.textContent = `$${totalCleared.toFixed(2)}`;
+    
+    if (totalPendingImpact !== 0) {
+        const sign = totalPendingImpact > 0 ? '+' : '';
+        pendingImpactDisplay.textContent = `${sign}${totalPendingImpact.toFixed(2)} pending across unverified entries`;
+    } else {
+        pendingImpactDisplay.textContent = "All transactions verified.";
+    }
 }
 
 // =========================================================================
