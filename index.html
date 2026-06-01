@@ -169,7 +169,21 @@
     <div class="modal-content">
         <h3>Edit Transaction</h3>
         <input type="text" id="edit-desc" placeholder="Description">
-        <input type="number" id="edit-amount" placeholder="Amount">
+        <input type="number" id="edit-amount" placeholder="Amount" step="0.01">
+        <select id="edit-category" style="width:100%; margin-bottom:12px; padding:8px;">
+            <option value="Unassigned">📦 Unassigned</option>
+            <option value="Housing">🏠 Housing / Rent</option>
+            <option value="Groceries">🍏 Groceries</option>
+            <option value="Utilities">⚡ Utilities</option>
+            <option value="Transport">🚗 Transport / Fuel</option>
+            <option value="Dining">🍔 Dining & Fast Food</option>
+            <option value="Entertainment">🎬 Entertainment</option>
+            <option value="Savings">📈 Savings Allocation</option>
+        </select>
+        <select id="edit-type" style="width:100%; margin-bottom:12px; padding:8px;">
+            <option value="expense">➖ Expense</option>
+            <option value="income">➕ Income</option>
+        </select>
         <div class="modal-actions">
             <button class="wallet-btn" onclick="closeEditModal()">Cancel</button>
             <button class="wallet-btn btn-primary" onclick="saveEditedTransaction()">Save</button>

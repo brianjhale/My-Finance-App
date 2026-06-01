@@ -118,7 +118,23 @@ function openEditModal(id) {
     currentEditId = id;
     document.getElementById('edit-desc').value = t.description;
     document.getElementById('edit-amount').value = t.amount;
+    document.getElementById('edit-category').value = t.category; // Set current value
+    document.getElementById('edit-type').value = t.type;         // Set current value
     document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function saveEditedTransaction() {
+    const t = transactions.find(tx => tx.id === currentEditId);
+    if (t) {
+        t.description = document.getElementById('edit-desc').value;
+        t.amount = parseFloat(document.getElementById('edit-amount').value);
+        t.category = document.getElementById('edit-category').value;
+        t.type = document.getElementById('edit-type').value;
+        
+        localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
+        syncAllApplicationViews();
+        closeEditModal();
+    }
 }
 
 function closeEditModal() {
