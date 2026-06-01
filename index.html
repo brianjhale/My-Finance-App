@@ -3,27 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Local Finance App</title>
+    <title>Clarity Wallet</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>💰 My Local Finance App</h1>
-    
-    <div class="form-group">
-      <input type="text" id="desc-input" placeholder="What did you buy? (e.g., Coffee)" />
-      <input type="number" id="amount-input" placeholder="Amount (e.g., 5.50)" step="0.01" />
-      <button id="add-btn">Add Transaction</button>
-    </div>
 
-    <ul id="transaction-list">
-      </ul>
+  <div class="app-wrapper">
     
-    <div class="controls">
-      <button id="export-btn">Export Data</button>
-      <button id="import-btn">Import Data</button>
-      <input type="file" id="import-file" style="display:none;" />
-    </div>
+    <nav class="sidebar">
+      <div class="sidebar-brand">💰 Clarity Wallet</div>
+      <ul class="nav-links">
+        <li><button class="nav-btn active" data-target="dashboard-page">📊 Dashboard</button></li>
+        <li><button class="nav-btn" data-target="transactions-page">💸 Transactions</button></li>
+        <li><button class="nav-btn" data-target="ledger-audit-page">📑 Ledger Audit</button></li>
+        <li><button class="nav-btn" data-target="accounts-page">🏦 Accounts</button></li>
+        <li><button class="nav-btn" data-target="savings-page">🎯 Savings Goals</button></li>
+        <li><button class="nav-btn" data-target="budget-page">🛡️ Budgets</button></li>
+        <li><button class="nav-btn" data-target="income-expenses-page">🔄 Income & Expenses</button></li>
+      </ul>
+      
+      <div class="sidebar-footer">
+        <button id="export-btn" class="util-btn">Export JSON</button>
+        <button id="import-btn" class="util-btn">Import JSON</button>
+        <input type="file" id="import-file" style="display:none;" />
+      </div>
+    </nav>
+
+    <main class="content-window">
+
+      <section id="dashboard-page" class="page-view">
+        <div class="view-header">
+          <h1>📊 Financial Dashboard</h1>
+          <p>Quick insights and real-time ledger health overview.</p>
+        </div>
+        
+        <div class="dashboard-stats-container">
+          <div class="stat-card">
+            <h3>💰 Combined Net Worth</h3>
+            <p id="total-net-worth">$0.00</p>
+            <small>Sum of all active bank and cash account vaults</small>
+          </div>
+        </div>
+      </section>
+
+      <section id="transactions-page" class="page-view hidden">
+        <div class="view-header">
+          <h1>💸 Transaction Ledger</h1>
+          <p>Add, edit, delete, and view your raw financial ledger entries.</p>
+        </div>
+        
+        <div class="transaction-container">
+          <div class="form-group">
+            <input type="text" id="desc-input" placeholder="What did you buy? (e.g., Coffee)" />
+            <input type="number" id="amount-input" placeholder="Amount (e.g., 5.50)" step="0.01" />
+            
+            <select id="transaction-account-select">
+              </select>
+
+            <select id="transaction-type-select">
+              <option value="expense">➖ Expense</option>
+              <option value="income">➕ Income</option>
+            </select>
+
+            <button id="add-btn">Add Entry</button>
+          </div>
+          <ul id="transaction-list">
+            </ul>
+        </div>
+      </section>
+
+      <section id="ledger-audit-page" class="page-view hidden">
+        <div class="view-header">
+          <h1>📑 Ledger Verification</h1>
+          <p>Scan and reconcile raw entry records to mark them as manually verified or pending.</p>
+        </div>
+
+        <div class="audit-reconciliation-container">
+          <div id="audit-feed-list" class="audit-feed-layout">
+            </div>
+        </div>
+      </section>
+
+      <section id="accounts-page" class="page-view hidden">
+        <div class="view-header">
+          <h1>🏦 Bank & Cash Accounts</h1>
+          <p>Manage institutions, starting balances, and track automated adjusted balances.</p>
+        </div>
+        
+        <div class="account-creation-container">
+          <h3>Create New Asset Account</h3>
+          <div class="account-form-group">
+            <input type="text" id="account-name-input" placeholder="Account Name (e.g., Checking)" />
+            <input type="number" id="account-balance-input" placeholder="Starting Balance (e.g., 1000.00)" step="0.01" />
+            <button id="add-account-btn">Create Account</button>
+          </div>
+        </div>
+
+        <div id="accounts-grid" class="accounts-grid-layout">
+          </div>
+      </section>
+
+      <section id="savings-page" class="page-view hidden">
+        <div class="view-header">
+          <h1>🎯 Savings Goals</h1>
+          <p>Establish financial milestones and dedicate asset allocations.</p>
+        </div>
+        <div class="placeholder-card">
+          <p>Target tracking models and contribution history fields live here.</p>
+        </div>
+      </section>
+
+      <section id="budget-page" class="page-view hidden">
+        <div class="view-header">
+          <h1>🛡️ Spending Budgets</h1>
+          <p>Set spending guardrails grouped by custom transaction categories.</p>
+        </div>
+        <div class="placeholder-card">
+          <p>Budget envelope bars and dynamic allocation progress elements go here.</p>
+        </div>
+      </section>
+
+      <section id="income-expenses-page" class="page-view hidden">
+        <div class="view-header">
+          <h1>🔄 Recurring Income & Expenses</h1>
+          <p>Map structural cash flow rules, distinguishing recurring vs single-time behaviors.</p>
+        </div>
+        <div class="placeholder-card">
+          <p>Schedules for monthly obligations and income matrices go here.</p>
+        </div>
+      </section>
+
+    </main>
   </div>
 
   <script src="script.js"></script>
