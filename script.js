@@ -28,7 +28,7 @@ let transactions = JSON.parse(localStorage.getItem('clarity_wallet_transactions'
 let accounts = JSON.parse(localStorage.getItem('clarity_wallet_accounts')) || [];
 
 // =========================================================================
-// 3. SPA ROUTER SYSTEM
+// 3. SPA ROUTER SYSTEM (With Dynamic Dropdown Hook)
 // =========================================================================
 function handleNavigation(event) {
     const clickedBtn = event.currentTarget;
@@ -44,6 +44,7 @@ function handleNavigation(event) {
         targetPage.classList.remove('hidden');
     }
 
+    // Force refresh the selection dropdown anytime the user switches to the transaction tab
     if (targetPageId === 'transactions-page') {
         populateAccountDropdown();
     }
@@ -54,7 +55,7 @@ navButtons.forEach(btn => {
 });
 
 // =========================================================================
-// 4. TRANSACTION LEDGER PROCESSING
+// 4. TRANSACTION LEDGER PROCESSING (With CRUD Splicing)
 // =========================================================================
 function populateAccountDropdown() {
     if (!transactionAccountSelect) return;
@@ -111,6 +112,7 @@ function addTransaction() {
 }
 
 function deleteTransaction(transactionId) {
+    // Filter memory array to exclude the target item ID
     transactions = transactions.filter(item => item.id !== transactionId);
     localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
     
@@ -142,6 +144,7 @@ function renderTransactions() {
             </div>
         `;
 
+        // Safely bind explicit event hook to the trash icon button
         const trashBtn = li.querySelector('.delete-btn');
         trashBtn.addEventListener('click', () => deleteTransaction(item.id));
 
@@ -192,7 +195,7 @@ function addAccount() {
     }
 
     syncAllApplicationViews();
-    populateAccountDropdown();
+    populateAccountDropdown(); // Instantly rebuild dropdown lists
 
     accountNameInput.value = '';
     accountBalanceInput.value = '';
@@ -203,14 +206,16 @@ function deleteAccount(accountId) {
         return;
     }
 
+    // 1. Remove account target profile from state memory
     accounts = accounts.filter(acc => acc.id !== accountId);
     localStorage.setItem('clarity_wallet_accounts', JSON.stringify(accounts));
 
+    // 2. Cascade purge: Wipe any transactions tied back to this unique ID
     transactions = transactions.filter(item => item.accountId !== accountId);
     localStorage.setItem('clarity_wallet_transactions', JSON.stringify(transactions));
 
     syncAllApplicationViews();
-    populateAccountDropdown();
+    populateAccountDropdown(); // Rebuild dropdown choices now that this option is removed
 }
 
 function renderAccounts() {
@@ -218,33 +223,28 @@ function renderAccounts() {
     
     accountsGrid.innerHTML = '';
     accounts.forEach(acc => {
-        // Dynamic balance presentation layers
         const verifiedTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === true);
-        const pendingTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === false);
+        let currentCalculatedBalance = parseFloat(acc.balance);
 
-        let clearedBalance = parseFloat(acc.balance); // Always starts at 0.00
         verifiedTransactions.forEach(item => {
-            if (item.type === 'expense') clearedBalance -= item.amount;
-            else if (item.type === 'income') clearedBalance += item.amount;
-        });
-
-        let workingBalance = clearedBalance;
-        pendingTransactions.forEach(item => {
-            if (item.type === 'expense') workingBalance -= item.amount;
-            else if (item.type === 'income') workingBalance += item.amount;
+            if (item.type === 'expense') {
+                currentCalculatedBalance -= item.amount;
+            } else if (item.type === 'income') {
+                currentCalculatedBalance += item.amount;
+            }
         });
 
         const card = document.createElement('div');
         card.className = 'account-card';
         card.innerHTML = `
             <h4 class="account-card-title">🏦 ${acc.name}</h4>
-            <p class="account-card-balance" style="font-size:22px;" title="Cleared Balance">$${clearedBalance.toFixed(2)}</p>
-            <small style="color: #64748b; display: block; margin-top: 2px;">Working: <strong>$${workingBalance.toFixed(2)}</strong></small>
+            <p class="account-card-balance">$${currentCalculatedBalance.toFixed(2)}</p>
             <div class="account-card-footer">
                 <button class="card-action-btn danger">Close Vault</button>
             </div>
         `;
 
+        // Bind delete functionality directly to the Close Vault option
         const closeVaultBtn = card.querySelector('.card-action-btn.danger');
         closeVaultBtn.addEventListener('click', () => deleteAccount(acc.id));
 
@@ -310,7 +310,7 @@ function renderAuditFeed() {
 }
 
 // =========================================================================
-// 7. DYNAMIC DUAL NET WORTH METRIC ENGINE
+// 7. DYNAMIC UNIFIED NET WORTH METRIC ENGINE
 // =========================================================================
 function updateDashboardMetrics() {
     const netWorthDisplay = document.getElementById('total-net-worth');
@@ -318,37 +318,35 @@ function updateDashboardMetrics() {
     
     if (!netWorthDisplay || !pendingImpactDisplay) return;
 
-    let totalCleared = 0;
+    let totalClearedNetWorth = 0;
     let totalPendingImpact = 0;
 
     accounts.forEach(acc => {
         const verifiedTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === true);
         const pendingTransactions = transactions.filter(item => item.accountId === acc.id && item.verified === false);
 
-        // Calculate Cleared Balance
-        let accCleared = parseFloat(acc.balance);
+        let accountClearedBalance = parseFloat(acc.balance); // Starts at 0.00
         verifiedTransactions.forEach(item => {
-            if (item.type === 'expense') accCleared -= item.amount;
-            else if (item.type === 'income') accCleared += item.amount;
+            if (item.type === 'expense') accountClearedBalance -= item.amount;
+            else if (item.type === 'income') accountClearedBalance += item.amount;
         });
 
-        // Calculate Pending Impact
-        let accPending = 0;
+        let accountPendingImpact = 0;
         pendingTransactions.forEach(item => {
-            if (item.type === 'expense') accPending -= item.amount;
-            else if (item.type === 'income') accPending += item.amount;
+            if (item.type === 'expense') accountPendingImpact -= item.amount;
+            else if (item.type === 'income') accountPendingImpact += item.amount;
         });
 
-        totalCleared += accCleared;
-        totalPendingImpact += accPending;
+        totalClearedNetWorth += accountClearedBalance;
+        totalPendingImpact += accountPendingImpact;
     });
 
     // Update UI
-    netWorthDisplay.textContent = `$${totalCleared.toFixed(2)}`;
+    netWorthDisplay.textContent = `$${totalClearedNetWorth.toFixed(2)}`;
     
     if (totalPendingImpact !== 0) {
         const sign = totalPendingImpact > 0 ? '+' : '';
-        pendingImpactDisplay.textContent = `${sign}${totalPendingImpact.toFixed(2)} pending across unverified entries`;
+        pendingImpactDisplay.textContent = `(${sign}${totalPendingImpact.toFixed(2)} pending across unverified entries)`;
     } else {
         pendingImpactDisplay.textContent = "All transactions verified.";
     }
